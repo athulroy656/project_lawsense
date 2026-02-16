@@ -1,0 +1,129 @@
+:root {
+    /* Core Base Colors - Dark Navy Theme */
+    --bg-0: #0f172a;
+    /* Deepest background (Hero, Page Main) */
+    --bg-1: #1e293b;
+    /* Secondary background (Cards, Sections) */
+    --bg-2: #334155;
+    /* Borders, Separators, Hover */
+    --bg-glass: rgba(30, 41, 59, 0.7);
+    /* Glass effect */
+
+    /* Text Colors - BRIGHTER for readability */
+    --text-main: #ffffff;
+    --text-muted: #cbd5e1;
+    --text-accent: #c4b5fd;
+    /* Light Indigo - brisker */
+
+    /* Brand/Accent Colors */
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-glow: rgba(99, 102, 241, 0.5);
+    --accent: #a78bfa;
+
+    /* Status Colors */
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+
+    /* Aliases for compatibility */
+    --bg-dark: var(--bg-0);
+    --bg-card: var(--bg-1);
+    --bg-card-hover: var(--bg-2);
+    --border-color: var(--bg-2);
+}
+
+body {
+    background-color: var(--bg-0);
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    margin: 0;
+}
+
+/* THEME WRAPPER - Enforces theme on any container */
+.ls-theme-dark,
+.ls-dashboard-container {
+    background-color: var(--bg-0);
+    color: var(--text-main);
+    min-height: 100vh;
+}
+
+/* REUSABLE UTILITIES */
+.ls-section {
+    padding: 6rem 2rem;
+    background-color: var(--bg-0);
+}
+
+.ls-section-alt {
+    padding: 6rem 2rem;
+    background-color: var(--bg-1);
+    /* Slightly lighter */
+}
+
+.ls-card {
+    background-color: var(--bg-1);
+    border: 1px solid var(--bg-2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.ls-glass-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+}
+
+/* BUTTONS */
+.ls-btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.ls-btn-primary:hover {
+    opacity: 0.9;
+}
+
+.ls-btn-outline {
+    background: transparent;
+    border: 1px solid var(--bg-2);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.ls-btn-outline:hover {
+    border-color: var(--text-main);
+    color: var(--text-main);
+}
+
+/* INPUTS */
+input,
+select,
+textarea {
+    background-color: var(--bg-1) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--bg-2) !important;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-0);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-2);
+    border-radius: 4px;
+}

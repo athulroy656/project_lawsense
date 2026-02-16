@@ -1,0 +1,391 @@
+import re
+
+CLAUSE_RULES = {
+    # =========================================================
+    # COMMON CLAUSES (All Document Types)
+    # =========================================================
+    "Termination": [
+        r"\bterminate\b",
+        r"\btermination\b",
+        r"\bnotice period\b",
+        r"\bend of this agreement\b",
+        r"\bcancel(lation)?\b",
+        r"\bdiscontinue\b",
+    ],
+    "Payment": [
+        r"\bpayment\b",
+        r"\bfees?\b",
+        r"\bcompensation\b",
+        r"\binvoice\b",
+        r"\bpricing\b",
+        r"\bsubscription\b",
+        r"\brefund\b",
+    ],
+    "Confidentiality": [
+        r"\bconfidential\b",
+        r"\bnon[- ]disclosure\b",
+        r"\bnda\b",
+        r"\bproprietary information\b",
+        r"\btrade secrets?\b",
+    ],
+    "Liability": [
+        r"\bliability\b",
+        r"\bdamages\b",
+        r"\blimit(ation)? of liability\b",
+        r"\bwaiver of liability\b",
+        r"\bharmless\b",
+        r"\bliable\b",
+    ],
+    "Governing Law": [
+        r"\bgoverning law\b",
+        r"\bjurisdiction\b",
+        r"\bcourts? of\b",
+        r"\bapplicable law\b",
+        r"\blaws? of (the )?state\b",
+        r"\bchoice of law\b",
+    ],
+    
+    # --- Priority 1: Essential Common Clauses ---
+    "Indemnification": [
+        r"\bindemnif(y|ication)\b",
+        r"\bhold\s+harmless\b",
+        r"\bdefend\s+and\s+indemnify\b",
+        r"\bindemnify\s+(us|the\s+company)\b",
+        r"\bagree\s+to\s+indemnify\b",
+        r"\bshall\s+indemnify\b",
+    ],
+    "Force Majeure": [
+        r"\bforce\s+majeure\b",
+        r"\bact(s)?\s+of\s+god\b",
+        r"\bunforeseeable\s+(circumstances?|events?)\b",
+        r"\bbeyond\s+(our|the\s+party'?s?)\s+control\b",
+        r"\bnatural\s+disaster\b",
+        r"\bpandemic\b",
+        r"\bwar\s+or\s+terrorism\b",
+        r"\bgovernment\s+action\b",
+    ],
+    "Severability": [
+        r"\bseverability\b",
+        r"\bseverable\b",
+        r"\bif\s+any\s+(provision|part|section)\s+(is|be)\s+(held\s+)?(invalid|unenforceable)\b",
+        r"\bremaining\s+(provisions?|terms?)\s+(shall\s+)?(remain|continue)\b",
+        r"\binvalid\s+or\s+unenforceable\b",
+        r"\bshall\s+not\s+affect\s+the\s+validity\b",
+    ],
+    
+    # --- Priority 2: Nice-to-Have Common Clauses ---
+    "Amendment": [
+        r"\bamendment\b",
+        r"\bmodif(y|ication)\s+(of\s+)?(this|these)\s+(agreement|terms)\b",
+        r"\bno\s+(amendment|modification)\s+(shall\s+be)?\s+valid\b",
+        r"\bwritten\s+amendment\b",
+        r"\breserve\s+the\s+right\s+to\s+(change|modify|update)\b",
+    ],
+    "Assignment": [
+        r"\bassignment\b",
+        r"\bassign\s+(this|the)\s+agreement\b",
+        r"\bmay\s+not\s+(be\s+)?assign(ed)?\b",
+        r"\btransfer\s+(of\s+)?(rights?|obligations?)\b",
+        r"\bsuccessors?\s+and\s+assigns?\b",
+        r"\bwithout\s+(prior\s+)?written\s+consent\b",
+    ],
+    "Entire Agreement": [
+        r"\bentire\s+agreement\b",
+        r"\bwhole\s+agreement\b",
+        r"\bsupersedes?\s+(all\s+)?(prior|previous)\b",
+        r"\bintegration\s+clause\b",
+        r"\bconstitutes?\s+the\s+entire\b",
+        r"\bno\s+other\s+(agreements?|understandings?)\b",
+    ],
+    "Notices": [
+        r"\bnotices?\s+(shall\s+be|must\s+be|will\s+be)\s+(sent|given|delivered)\b",
+        r"\bwritten\s+notice\b",
+        r"\bnotice\s+(to|at)\s+(the\s+)?address\b",
+        r"\bnotice\s+requirements?\b",
+        r"\bby\s+(email|mail|certified\s+mail)\b",
+        r"\bdelivery\s+of\s+notice\b",
+    ],
+    
+    # =========================================================
+    # TERMS & CONDITIONS SPECIFIC
+    # =========================================================
+    "User Obligations": [
+        r"\buser\s+(obligations?|responsibilities)\b",
+        r"\byou\s+(agree|must|shall|are\s+responsible)\b",
+        r"\byour\s+(obligations?|responsibilities|duties)\b",
+        r"\bmust\s+not\b",
+        r"\bshall\s+not\b",
+        r"\bprohibited\s+from\b",
+        r"\bagree\s+to\s+(comply|abide)\b",
+    ],
+    "Dispute Resolution": [
+        r"\bdispute\s+resolution\b",
+        r"\barbitration\b",
+        r"\bmediation\b",
+        r"\bclass\s+action\s+waiver\b",
+        r"\bbinding\s+arbitration\b",
+        r"\bresolve\s+(any\s+)?disputes?\b",
+        r"\bdisputes?\s+(shall|will|must)\s+be\b",
+    ],
+    "Acceptable Use": [
+        r"\bacceptable\s+use\b",
+        r"\bprohibited\s+(activities|conduct|uses?)\b",
+        r"\byou\s+(may|shall)\s+not\b",
+        r"\bforbidden\b",
+        r"\billegal\s+(use|activity|content)\b",
+        r"\babusive\s+(behavior|conduct)\b",
+        r"\bviolat(e|ion)\b",
+    ],
+    "Account Terms": [
+        r"\baccount\s+(registration|creation|termination)\b",
+        r"\bcreate\s+(an?\s+)?account\b",
+        r"\bregister(ed)?\s+user\b",
+        r"\baccount\s+(suspension|deletion)\b",
+        r"\buser\s+account\b",
+        r"\bpassword\b",
+        r"\blogin\s+credentials\b",
+    ],
+    "Intellectual Property": [
+        r"\bintellectual\s+property\b",
+        r"\bcopyright\b",
+        r"\btrademark\b",
+        r"\bpatent\b",
+        r"\bproprietary\s+rights?\b",
+        r"\ball\s+rights\s+reserved\b",
+        r"\bownership\s+(of|rights?)\b",
+        r"\blicen(s|c)e\s+(grant|to\s+use)\b",
+    ],
+    "Service Availability": [
+        r"\bservice\s+availability\b",
+        r"\buptime\b",
+        r"\bdowntime\b",
+        r"\bmaintenance\b",
+        r"\bmodif(y|ication)\s+(the\s+)?service\b",
+        r"\bdiscontinue\s+(the\s+)?service\b",
+        r"\bservice\s+interruption\b",
+        r"\bas[- ]is\b",
+    ],
+    "User Content": [
+        r"\buser[- ]generated\s+content\b",
+        r"\buser\s+content\b",
+        r"\bcontent\s+you\s+(post|submit|upload)\b",
+        r"\byour\s+content\b",
+        r"\bsubmissions?\b",
+        r"\bgrant\s+(us\s+)?a\s+license\b",
+    ],
+    "Privacy & Data": [
+        r"\bprivacy\s+policy\b",
+        r"\bpersonal\s+(data|information)\b",
+        r"\bdata\s+(collection|processing|protection)\b",
+        r"\bcookies?\b",
+        r"\btrack(ing)?\b",
+    ],
+    "Warranty Disclaimer": [
+        r"\bdisclaimer\s+of\s+warrant(y|ies)\b",
+        r"\bno\s+warrant(y|ies)\b",
+        r"\bwithout\s+warrant(y|ies)\b",
+        r"\bas[- ]is\b.*\bwithout\b",
+        r"\bexpress(ly)?\s+disclaim\b",
+        r"\bimplied\s+warrant(y|ies)\b",
+    ],
+    
+    # --- Priority 1: Essential T&C Clauses ---
+    "Age/Eligibility": [
+        r"\b(must\s+be|at\s+least)\s+(13|16|18|21)\s+(years?\s+)?(old|of\s+age)\b",
+        r"\bage\s+(requirement|restriction|limit)\b",
+        r"\beligib(le|ility)\b",
+        r"\bminors?\s+(are\s+)?(not\s+)?(allowed|permitted|prohibited)\b",
+        r"\blegal\s+age\b",
+        r"\bparental\s+consent\b",
+        r"\bchildren\s+under\b",
+        r"\bcoppa\b",
+    ],
+    "Modifications to Terms": [
+        r"\bmodif(y|ication)\s+(of\s+)?(these\s+)?terms\b",
+        r"\bchange\s+(these\s+)?terms\b",
+        r"\bupdate\s+(these\s+)?terms\b",
+        r"\breserve\s+the\s+right\s+to\s+(modify|change|update|revise)\b",
+        r"\bterms\s+may\s+(be\s+)?(changed|modified|updated)\b",
+        r"\bpost(ing)?\s+(the\s+)?(revised|updated|new)\s+terms\b",
+        r"\bcontinued\s+use\s+(constitutes|means)\s+acceptance\b",
+    ],
+    "Third-Party Services": [
+        r"\bthird[- ]party\s+(services?|links?|websites?|content)\b",
+        r"\bexternal\s+(links?|websites?|services?)\b",
+        r"\bnot\s+responsible\s+for\s+(third|external)\b",
+        r"\blinks?\s+to\s+(other|external)\b",
+        r"\bthird[- ]party\s+providers?\b",
+        r"\bwe\s+(do\s+)?not\s+(endorse|control)\b",
+    ],
+    
+    # --- Priority 2: Nice-to-Have T&C Clauses ---
+    "Electronic Communications": [
+        r"\belectronic\s+(communications?|notices?|signatures?)\b",
+        r"\bconsent\s+to\s+(receive\s+)?(electronic|email)\b",
+        r"\bemail\s+(notifications?|communications?)\b",
+        r"\be[- ]?sign\b",
+        r"\belectronic\s+records?\b",
+        r"\bdigital\s+signature\b",
+    ],
+    "Export Controls": [
+        r"\bexport\s+(control|restriction|compliance)\b",
+        r"\bsanctions?\s+(laws?|regulations?)\b",
+        r"\bofac\b",
+        r"\bexport\s+administration\b",
+        r"\bprohibited\s+(countries|jurisdictions)\b",
+        r"\btrade\s+restrictions?\b",
+        r"\bembargo\b",
+    ],
+    
+    # =========================================================
+    # NDA (NON-DISCLOSURE AGREEMENT) SPECIFIC
+    # =========================================================
+    
+    # --- Core NDA Clauses ---
+    "Definition of Confidential Information": [
+        r"\bdefinition\s+of\s+confidential\s+information\b",
+        r"\bconfidential\s+information\s+(means|includes|shall\s+mean)\b",
+        r"\bfor\s+(the\s+)?purposes?\s+of\s+this\s+agreement.*confidential\b",
+        r"\bconfidential\s+information\s+shall\s+(include|mean|refer)\b",
+        r"\b(all|any)\s+information\s+(disclosed|provided|shared).*confidential\b",
+        r"\bproprietary\s+information\s+(means|includes)\b",
+    ],
+    "Exclusions from Confidential Information": [
+        r"\bexclusion(s)?\s+(from\s+)?confidential\s+information\b",
+        r"\bconfidential\s+information\s+(shall|does)\s+not\s+include\b",
+        r"\bshall\s+not\s+be\s+(deemed|considered)\s+confidential\b",
+        r"\bpublic(ly)?\s+(known|available|domain)\b",
+        r"\bindependently\s+developed\b",
+        r"\breceived\s+from\s+(a\s+)?third\s+party\b",
+        r"\bwithout\s+breach\s+of\s+(this|any)\s+(agreement|obligation)\b",
+        r"\balready\s+(in\s+)?(the\s+)?possession\b",
+    ],
+    "Purpose of Disclosure": [
+        r"\bpurpose\s+of\s+(this\s+)?(disclosure|agreement)\b",
+        r"\bdisclosed\s+(solely\s+)?for\s+(the\s+)?purpose\b",
+        r"\bfor\s+the\s+(sole\s+)?purpose\s+of\b",
+        r"\bpermitted\s+purpose\b",
+        r"\bbusiness\s+purpose\b",
+        r"\bevaluat(e|ion|ing)\s+(a\s+)?(potential|possible)?\s*(business)?\s*(relationship|transaction|opportunity)\b",
+        r"\bin\s+connection\s+with\b",
+    ],
+    "Confidentiality Obligations": [
+        r"\bconfidentiality\s+obligations?\b",
+        r"\bobligations?\s+of\s+confidentiality\b",
+        r"\bmaintain\s+(the\s+)?confidentiality\b",
+        r"\bkeep\s+(the\s+)?information\s+confidential\b",
+        r"\bprotect\s+(the\s+)?confidential\s+information\b",
+        r"\bsame\s+degree\s+of\s+care\b",
+        r"\breasonable\s+(steps|measures|efforts?)\s+to\s+protect\b",
+        r"\bshall\s+(not\s+)?disclose\b",
+        r"\btreat\s+as\s+confidential\b",
+    ],
+    "Permitted Disclosures": [
+        r"\bpermitted\s+disclosure(s)?\b",
+        r"\bmay\s+(be\s+)?disclose(d)?\s+to\b",
+        r"\bdisclose\s+to\s+(its\s+)?(employees|officers|directors|advisors|agents|representatives)\b",
+        r"\bneed[- ]to[- ]know\s+basis\b",
+        r"\bauthorized\s+(to\s+)?(receive|access)\b",
+        r"\brequired\s+by\s+(law|court|regulation|government)\b",
+        r"\blegally\s+compelled\b",
+        r"\bsubpoena\b",
+    ],
+    "Non-Use Restriction": [
+        r"\bnon[- ]use\b",
+        r"\bshall\s+not\s+(be\s+)?use(d)?\b.*\bexcept\b",
+        r"\buse\s+(only|solely)\s+for\b",
+        r"\bprohibited\s+from\s+using\b",
+        r"\bnot\s+(use|exploit)\s+(the\s+)?confidential\s+information\b",
+        r"\brestriction\s+on\s+use\b",
+        r"\bshall\s+not\s+use.*competitive\b",
+        r"\bshall\s+not\s+use.*own\s+(benefit|advantage)\b",
+    ],
+    "Term of Agreement": [
+        r"\bterm\s+of\s+(this\s+)?(agreement|nda)\b",
+        r"\beffective\s+date\b",
+        r"\bshall\s+(commence|begin)\s+on\b",
+        r"\bshall\s+(remain|continue)\s+in\s+(full\s+)?(force|effect)\b",
+        r"\bduration\s+of\s+(this\s+)?agreement\b",
+        r"\bfor\s+a\s+period\s+of\b",
+        r"\buntil\s+(terminated|expiration)\b",
+    ],
+    "Survival of Confidentiality": [
+        r"\bsurvival\b",
+        r"\bsurvive\s+(the\s+)?(termination|expiration)\b",
+        r"\bconfidentiality\s+obligations?\s+(shall\s+)?survive\b",
+        r"\bshall\s+(continue|remain)\s+(in\s+)?(effect|force)\s+(after|following)\b",
+        r"\b(obligations?|duties?)\s+(shall\s+)?survive\b",
+        r"\bnotwithstanding\s+(the\s+)?(termination|expiration)\b",
+        r"\bfor\s+a\s+period\s+of.*after\s+(termination|expiration)\b",
+    ],
+    "Ownership of Information": [
+        r"\bownership\s+of\s+(confidential\s+)?information\b",
+        r"\bno\s+(transfer|grant)\s+of\s+(ownership|title|rights?)\b",
+        r"\bretain(s)?\s+(all\s+)?(ownership|title|rights?)\b",
+        r"\bremains?\s+(the\s+)?(sole\s+)?property\b",
+        r"\bno\s+(intellectual\s+property|ip)\s+rights?\s+(are\s+)?(granted|transferred)\b",
+        r"\bno\s+license\s+(is\s+)?(granted|implied)\b",
+    ],
+    "No Obligation to Disclose": [
+        r"\bno\s+obligation\s+to\s+disclose\b",
+        r"\bnot\s+(obligated|required)\s+to\s+disclose\b",
+        r"\bno\s+party\s+(shall\s+be|is)\s+(obligated|required)\b",
+        r"\bdisclosure\s+(is|shall\s+be)\s+(voluntary|discretionary)\b",
+        r"\bmay\s+(choose|elect)\s+(not\s+)?to\s+disclose\b",
+    ],
+    "Remedies for Breach": [
+        r"\bremedies?\s+(for\s+)?breach\b",
+        r"\binjunctive\s+relief\b",
+        r"\bspecific\s+performance\b",
+        r"\birrepar(able)?\s+(harm|damage|injury)\b",
+        r"\bequitable\s+relief\b",
+        r"\bmonetary\s+damages\s+(may\s+)?not\s+be\s+(adequate|sufficient)\b",
+        r"\bseek(ing)?\s+(an?\s+)?(injunction|restraining\s+order)\b",
+        r"\bwithout\s+(the\s+)?need\s+(to\s+)?(prove|post)\b",
+    ],
+    "Return or Destruction of Information": [
+        r"\breturn\s+(or|and)\s+destru(ction|y)\b",
+        r"\breturn\s+(all\s+)?(confidential\s+)?information\b",
+        r"\bdestroy\s+(all\s+)?(copies|materials|documents)\b",
+        r"\bupon\s+(termination|expiration|request).*return\b",
+        r"\bcertif(y|ication)\s+(of\s+)?(destruction|return)\b",
+        r"\bpromptly\s+(return|destroy)\b",
+        r"\bshall\s+(return|destroy)\s+(all\s+)?confidential\b",
+    ],
+    "No Waiver": [
+        r"\bno\s+waiver\b",
+        r"\bfailure\s+to\s+(enforce|exercise).*waiver\b",
+        r"\bwaiver\s+(must|shall)\s+be\s+(in\s+)?writing\b",
+        r"\bshall\s+not\s+(constitute|be\s+deemed)\s+(a\s+)?waiver\b",
+        r"\bno\s+(delay|failure).*waive\b",
+        r"\bexpress\s+written\s+waiver\b",
+    ],
+    "Counterparts": [
+        r"\bcounterparts?\b",
+        r"\bexecuted\s+in\s+(one\s+or\s+more\s+)?counterparts?\b",
+        r"\beach\s+(of\s+which|counterpart).*original\b",
+        r"\belectronic\s+(or\s+)?facsimile\s+(signatures?|copies)\b",
+        r"\bsigned\s+in\s+counterparts?\b",
+    ],
+    "Signatures": [
+        r"\bin\s+witness\s+whereof\b",
+        r"\bexecuted\s+(as\s+of|on)\s+(the\s+)?date\b",
+        r"\bduly\s+authorized\s+representative\b",
+        r"\bsigned\s+by\s+(the\s+)?parties\b",
+        r"\bauthorized\s+signator(y|ies)\b",
+        r"\bby:\s*_+\b",
+        r"\bname:\s*_+\b",
+        r"\btitle:\s*_+\b",
+    ],
+}
+
+
+def classify_clause(text: str) -> str:
+    text_lower = text.lower()
+
+    for label, patterns in CLAUSE_RULES.items():
+        for pattern in patterns:
+            if re.search(pattern, text_lower):
+                return label
+
+    return "Other"
