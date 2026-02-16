@@ -1,46 +1,100 @@
-# Environment variables
-.env
+########################################
+# OS / Editor junk
+########################################
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-*.egg-info/
-dist/
-build/
-
-# Django
-*.log
-db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
-lawsense.log
-
-# ChromaDB
-chroma_db/
-
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
+########################################
+# Python / Django
+########################################
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Node
+.venv/
+venv/
+ENV/
+env/
+
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+*.log
+logs/
+
+# Django media uploads (user documents)
+media/
+
+########################################
+# Environment / secrets
+########################################
+.env
+.env.*
+!.env.example
+
+########################################
+# Node / Frontend
+########################################
 node_modules/
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Frontend build
+# Frontend build outputs
 frontend/dist/
 frontend/build/
+
+########################################
+# Ignore ALL Markdown docs/notes
+########################################
+*.md
+
+########################################
+# ChromaDB + vector DB files (do not push)
+########################################
+
+
+# Your backup folders seen in the repo output
+chroma_db_backup*/
+chroma_db_gone_forever/
+test_chroma_db/
+chroma_db_gone_forever/
+chroma_db_backup_20260215_2355
+chroma_db_backup_final
+chroma_db_backup_force_v2
+chroma_db_backup_manual_final
+chroma_db_gone_forever
+chroma_db_old
+chroma_db_backup_20260215_2350
+# Generic DB backups / dump-like files
+*.sqlite3
+*.db
+*.bin
+
+########################################
+# Backups / temporary files
+########################################
+*backup*
+*.bak
+*.tmp
+*.old
+*.orig
+
+########################################
+# Local test outputs / scratch files (seen in repo)
+########################################
+test_output*.txt
+debug_chroma.py
+verify_loophole.py
+verify_qa.py
+temp_guards.js
+chroma_db_gone_forever/
